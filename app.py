@@ -192,4 +192,9 @@ def download_srt(job_id):
 
 if __name__ == "__main__":
     print("\n✓ Abre o navegador en: http://localhost:5000\n")
-    app.run(debug=False, host="0.0.0.0", port=5000)
+   import os
+
+ app.run(
+    host="0.0.0.0",
+    port=int(os.environ.get("PORT", 5000))
+ )
