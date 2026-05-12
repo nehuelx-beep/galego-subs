@@ -1,609 +1,694 @@
 <!DOCTYPE html>
 <html lang="gl">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Subtítulos en Galego</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg: #0a0a0f;
-    --surface: #12121a;
-    --surface2: #1a1a26;
-    --border: rgba(255,255,255,0.08);
-    --border2: rgba(255,255,255,0.15);
-    --accent: #4ade80;
-    --accent2: #22d3ee;
-    --text: #f0f0f5;
-    --muted: #6b6b80;
-    --error: #f87171;
-  }
-
-  body {
-    font-family: 'Syne', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  /* Fondo con patrón sutil */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: radial-gradient(circle at 20% 20%, rgba(74,222,128,0.04) 0%, transparent 50%),
-                      radial-gradient(circle at 80% 80%, rgba(34,211,238,0.04) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .container {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    max-width: 720px;
-    padding: 0 1.5rem 4rem;
-  }
-
-  header {
-    padding: 3rem 0 2.5rem;
-    text-align: center;
-  }
-
-  .logo-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(74,222,128,0.1);
-    border: 1px solid rgba(74,222,128,0.25);
-    border-radius: 999px;
-    padding: 6px 16px;
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    color: var(--accent);
-    letter-spacing: 0.05em;
-    margin-bottom: 1.25rem;
-  }
-
-  .logo-badge::before {
-    content: '';
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: pulse 2s infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
-
-  h1 {
-    font-size: clamp(2rem, 5vw, 3rem);
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
-    margin-bottom: 0.75rem;
-  }
-
-  h1 span {
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .subtitle {
-    color: var(--muted);
-    font-size: 1rem;
-    font-weight: 400;
-    line-height: 1.6;
-  }
-
-  /* Drop zone */
-  .dropzone {
-    border: 1.5px dashed var(--border2);
-    border-radius: 16px;
-    padding: 3rem 2rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    background: var(--surface);
-    margin-bottom: 1.5rem;
-  }
-
-  .dropzone:hover, .dropzone.drag-over {
-    border-color: var(--accent);
-    background: rgba(74,222,128,0.05);
-  }
-
-  .dropzone input[type="file"] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
-  }
-
-  .drop-icon {
-    width: 56px; height: 56px;
-    margin: 0 auto 1rem;
-    border-radius: 14px;
-    background: rgba(74,222,128,0.1);
-    border: 1px solid rgba(74,222,128,0.2);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 24px;
-  }
-
-  .dropzone h3 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 0.4rem;
-  }
-
-  .dropzone p {
-    font-size: 0.85rem;
-    color: var(--muted);
-  }
-
-  .formats {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-top: 1rem;
-  }
-
-  .format-tag {
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    padding: 3px 8px;
-    border-radius: 4px;
-    background: var(--surface2);
-    color: var(--muted);
-    border: 1px solid var(--border);
-  }
-
-  /* Panel de progreso */
-  #progress-panel {
-    display: none;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .file-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 1.25rem;
-  }
-
-  .file-icon {
-    width: 40px; height: 40px;
-    border-radius: 10px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
-  }
-
-  .file-name {
-    font-size: 0.9rem;
-    font-weight: 700;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .file-size { font-size: 0.8rem; color: var(--muted); }
-
-  .progress-bar-wrap {
-    background: var(--surface2);
-    border-radius: 999px;
-    height: 6px;
-    overflow: hidden;
-    margin-bottom: 0.75rem;
-  }
-
-  .progress-bar {
-    height: 100%;
-    border-radius: 999px;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    transition: width 0.5s ease;
-    width: 0%;
-  }
-
-  .progress-status {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .status-text {
-    font-size: 0.85rem;
-    color: var(--muted);
-  }
-
-  .status-pct {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.8rem;
-    color: var(--accent);
-  }
-
-  /* Steps indicator */
-  .steps {
-    display: flex;
-    gap: 6px;
-    margin-top: 1.25rem;
-  }
-
-  .step {
-    flex: 1;
-    height: 3px;
-    border-radius: 999px;
-    background: var(--surface2);
-    transition: background 0.4s ease;
-  }
-
-  .step.active { background: var(--accent); }
-  .step.done { background: rgba(74,222,128,0.4); }
-
-  /* Panel de resultado */
-  #result-panel {
-    display: none;
-    background: var(--surface);
-    border: 1px solid rgba(74,222,128,0.25);
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .result-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 1.25rem;
-  }
-
-  .result-check {
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    background: rgba(74,222,128,0.15);
-    border: 1px solid rgba(74,222,128,0.3);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 15px;
-  }
-
-  .result-title {
-    font-size: 1rem;
-    font-weight: 700;
-  }
-
-  .result-sub {
-    font-size: 0.82rem;
-    color: var(--muted);
-  }
-
-  .transcript-box {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1rem;
-    font-size: 0.85rem;
-    line-height: 1.7;
-    color: #c0c0d0;
-    max-height: 140px;
-    overflow-y: auto;
-    margin-bottom: 1.25rem;
-    font-family: 'Space Mono', monospace;
-  }
-
-  .transcript-box::-webkit-scrollbar { width: 4px; }
-  .transcript-box::-webkit-scrollbar-track { background: transparent; }
-  .transcript-box::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
-
-  .download-btns {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  .btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 0.75rem 1rem;
-    border-radius: 10px;
-    font-family: 'Syne', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    text-decoration: none;
-    border: none;
-  }
-
-  .btn-primary {
-    background: var(--accent);
-    color: #0a0a0f;
-  }
-
-  .btn-primary:hover { background: #6ee7a0; transform: translateY(-1px); }
-
-  .btn-secondary {
-    background: var(--surface2);
-    color: var(--text);
-    border: 1px solid var(--border2);
-  }
-
-  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
-
-  .btn-reset {
-    width: 100%;
-    margin-top: 10px;
-    background: transparent;
-    color: var(--muted);
-    border: 1px solid var(--border);
-    font-size: 0.82rem;
-  }
-
-  .btn-reset:hover { color: var(--text); border-color: var(--border2); }
-
-  /* Error */
-  #error-panel {
-    display: none;
-    background: rgba(248,113,113,0.05);
-    border: 1px solid rgba(248,113,113,0.2);
-    border-radius: 12px;
-    padding: 1rem 1.25rem;
-    color: var(--error);
-    font-size: 0.88rem;
-    margin-bottom: 1.5rem;
-  }
-
-  /* Info cards al final */
-  .info-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-top: 2rem;
-  }
-
-  .info-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1rem;
-    text-align: center;
-  }
-
-  .info-card .icon { font-size: 20px; margin-bottom: 6px; }
-  .info-card h4 { font-size: 0.82rem; font-weight: 700; margin-bottom: 4px; }
-  .info-card p { font-size: 0.75rem; color: var(--muted); line-height: 1.5; }
-</style>
-</head>
-<body>
-<div class="container">
-  <header>
-    <div class="logo-badge">100% local · sen nube · privado</div>
-    <h1>Subtítulos en<br><span>Galego</span> automáticos</h1>
-    <p class="subtitle">Sobe o teu vídeo e terás subtítulos precisos en galego<br>listos para Instagram, TikTok e YouTube.</p>
-  </header>
-
-  <!-- Drop zone -->
-  <div class="dropzone" id="dropzone">
-    <input type="file" id="file-input" accept="video/*,.mp4,.mov,.avi,.mkv,.webm">
-    <div class="drop-icon">🎬</div>
-    <h3>Arrastra o vídeo aquí</h3>
-    <p>ou fai clic para seleccionalo</p>
-    <div class="formats">
-      <span class="format-tag">MP4</span>
-      <span class="format-tag">MOV</span>
-      <span class="format-tag">AVI</span>
-      <span class="format-tag">MKV</span>
-      <span class="format-tag">WEBM</span>
-      <span class="format-tag">até 500 MB</span>
-    </div>
-  </div>
-
-  <!-- Progreso -->
-  <div id="progress-panel">
-    <div class="file-info">
-      <div class="file-icon">🎞️</div>
-      <div>
-        <div class="file-name" id="prog-filename">video.mp4</div>
-        <div class="file-size" id="prog-size"></div>
-      </div>
-    </div>
-    <div class="progress-bar-wrap">
-      <div class="progress-bar" id="progress-bar"></div>
-    </div>
-    <div class="progress-status">
-      <span class="status-text" id="status-text">Procesando...</span>
-      <span class="status-pct" id="status-pct">0%</span>
-    </div>
-    <div class="steps">
-      <div class="step" id="step-1"></div>
-      <div class="step" id="step-2"></div>
-      <div class="step" id="step-3"></div>
-      <div class="step" id="step-4"></div>
-    </div>
-  </div>
-
-  <!-- Error -->
-  <div id="error-panel">
-    <strong>⚠ Erro:</strong> <span id="error-text"></span>
-  </div>
-
-  <!-- Resultado -->
-  <div id="result-panel">
-    <div class="result-header">
-      <div class="result-check">✓</div>
-      <div>
-        <div class="result-title">Vídeo listo para subir!</div>
-        <div class="result-sub">Subtítulos en galego engadidos correctamente</div>
-      </div>
-    </div>
-    <div class="transcript-box" id="transcript-text">
-      Aquí aparecerá a transcrición...
-    </div>
-    <div class="download-btns">
-      <a class="btn btn-primary" id="btn-download-video" href="#" download>
-        ⬇ Descargar vídeo
-      </a>
-      <a class="btn btn-secondary" id="btn-download-srt" href="#" download>
-        📄 Descargar .SRT
-      </a>
-    </div>
-    <button class="btn btn-reset" onclick="resetApp()">
-      ↩ Procesar outro vídeo
-    </button>
-  </div>
-
-  <!-- Info -->
-  <div class="info-grid">
-    <div class="info-card">
-      <div class="icon">🎙️</div>
-      <h4>Whisper de OpenAI</h4>
-      <p>Modelo de recoñecemento de voz corre no teu ordenador</p>
-    </div>
-    <div class="info-card">
-      <div class="icon">🔒</div>
-      <h4>Totalmente privado</h4>
-      <p>O vídeo non sae do teu ordenador en ningún momento</p>
-    </div>
-    <div class="info-card">
-      <div class="icon">📱</div>
-      <h4>Para redes sociais</h4>
-      <p>Formato MP4 optimizado con subtítulos queimados</p>
-    </div>
-  </div>
-</div>
-
-<script>
-const dropzone = document.getElementById('dropzone');
-const fileInput = document.getElementById('file-input');
-let currentJobId = null;
-let pollInterval = null;
-
-// Drag & drop
-dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
-dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
-dropzone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropzone.classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) uploadFile(file);
-});
-fileInput.addEventListener('change', () => {
-  if (fileInput.files[0]) uploadFile(fileInput.files[0]);
-});
-
-function formatBytes(bytes) {
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / 1024 / 1024).toFixed(1) + ' MB';
-}
-
-async function uploadFile(file) {
-  document.getElementById('progress-panel').style.display = 'block';
-  document.getElementById('result-panel').style.display = 'none';
-  document.getElementById('error-panel').style.display = 'none';
-  dropzone.style.display = 'none';
-
-  document.getElementById('prog-filename').textContent = file.name;
-  document.getElementById('prog-size').textContent = formatBytes(file.size);
-  setProgress(5, 'Subindo ficheiro...');
-
-  const formData = new FormData();
-  formData.append('video', file);
-
-  try {
-    const res = await fetch('/upload', { method: 'POST', body: formData });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-
-    currentJobId = data.job_id;
-    pollInterval = setInterval(pollStatus, 1500);
-  } catch (err) {
-    showError(err.message);
-  }
-}
-
-async function pollStatus() {
-  if (!currentJobId) return;
-  try {
-    const res = await fetch(`/status/${currentJobId}`);
-    const data = await res.json();
-
-    setProgress(data.progress, data.message);
-
-    if (data.status === 'done') {
-      clearInterval(pollInterval);
-      showResult(data);
-    } else if (data.status === 'error') {
-      clearInterval(pollInterval);
-      showError(data.message);
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subtítulos en Galego</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=Space+Mono:wght@400;700&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
-  } catch (err) {
-    clearInterval(pollInterval);
-    showError('Erro de conexión co servidor.');
-  }
-}
 
-function setProgress(pct, message) {
-  document.getElementById('progress-bar').style.width = pct + '%';
-  document.getElementById('status-text').textContent = message || '';
-  document.getElementById('status-pct').textContent = pct + '%';
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --surface2: #1a1a26;
+      --border: rgba(255, 255, 255, 0.08);
+      --border2: rgba(255, 255, 255, 0.15);
+      --accent: #4ade80;
+      --accent2: #22d3ee;
+      --text: #f0f0f5;
+      --muted: #6b6b80;
+      --error: #f87171;
+    }
 
-  // Steps
-  const stepMap = { 10: 1, 30: 1, 65: 2, 80: 3, 100: 4 };
-  const activeStep = pct <= 30 ? 1 : pct <= 65 ? 2 : pct <= 80 ? 3 : 4;
-  for (let i = 1; i <= 4; i++) {
-    const el = document.getElementById(`step-${i}`);
-    if (i < activeStep) el.className = 'step done';
-    else if (i === activeStep) el.className = 'step active';
-    else el.className = 'step';
-  }
-}
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-function showResult(data) {
-  document.getElementById('progress-panel').style.display = 'none';
-  document.getElementById('result-panel').style.display = 'block';
-  document.getElementById('transcript-text').textContent = data.transcript || 'Sen transcrición';
-  document.getElementById('btn-download-video').href = `/download/${currentJobId}`;
-  document.getElementById('btn-download-srt').href = `/download_srt/${currentJobId}`;
-}
+    /* Fondo con patrón sutil */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle at 20% 20%, rgba(74, 222, 128, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(34, 211, 238, 0.04) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
 
-function showError(msg) {
-  document.getElementById('progress-panel').style.display = 'none';
-  document.getElementById('error-panel').style.display = 'block';
-  document.getElementById('error-text').textContent = msg;
-  dropzone.style.display = 'block';
-}
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 720px;
+      padding: 0 1.5rem 4rem;
+    }
 
-function resetApp() {
-  currentJobId = null;
-  if (pollInterval) clearInterval(pollInterval);
-  document.getElementById('result-panel').style.display = 'none';
-  document.getElementById('error-panel').style.display = 'none';
-  document.getElementById('progress-panel').style.display = 'none';
-  dropzone.style.display = 'block';
-  fileInput.value = '';
-}
-</script>
+    header {
+      padding: 3rem 0 2.5rem;
+      text-align: center;
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(74, 222, 128, 0.1);
+      border: 1px solid rgba(74, 222, 128, 0.25);
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+      margin-bottom: 1.25rem;
+    }
+
+    .logo-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.3;
+      }
+    }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.75rem;
+    }
+
+    h1 span {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 400;
+      line-height: 1.6;
+    }
+
+    /* Drop zone */
+    .dropzone {
+      border: 1.5px dashed var(--border2);
+      border-radius: 16px;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      background: var(--surface);
+      margin-bottom: 1.5rem;
+    }
+
+    .dropzone:hover,
+    .dropzone.drag-over {
+      border-color: var(--accent);
+      background: rgba(74, 222, 128, 0.05);
+    }
+
+    .dropzone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 1rem;
+      border-radius: 14px;
+      background: rgba(74, 222, 128, 0.1);
+      border: 1px solid rgba(74, 222, 128, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .dropzone h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+
+    .dropzone p {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .formats {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    .format-tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    /* Panel de progreso */
+    #progress-panel {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1.25rem;
+    }
+
+    .file-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .file-name {
+      font-size: 0.9rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-size {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .progress-bar-wrap {
+      background: var(--surface2);
+      border-radius: 999px;
+      height: 6px;
+      overflow: hidden;
+      margin-bottom: 0.75rem;
+    }
+
+    .progress-bar {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+
+    .progress-status {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .status-text {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .status-pct {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--accent);
+    }
+
+    /* Steps indicator */
+    .steps {
+      display: flex;
+      gap: 6px;
+      margin-top: 1.25rem;
+    }
+
+    .step {
+      flex: 1;
+      height: 3px;
+      border-radius: 999px;
+      background: var(--surface2);
+      transition: background 0.4s ease;
+    }
+
+    .step.active {
+      background: var(--accent);
+    }
+
+    .step.done {
+      background: rgba(74, 222, 128, 0.4);
+    }
+
+    /* Panel de resultado */
+    #result-panel {
+      display: none;
+      background: var(--surface);
+      border: 1px solid rgba(74, 222, 128, 0.25);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.25rem;
+    }
+
+    .result-check {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(74, 222, 128, 0.15);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
+
+    .result-title {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .result-sub {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .transcript-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      font-size: 0.85rem;
+      line-height: 1.7;
+      color: #c0c0d0;
+      max-height: 140px;
+      overflow-y: auto;
+      margin-bottom: 1.25rem;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .transcript-box::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .transcript-box::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .transcript-box::-webkit-scrollbar-thumb {
+      background: var(--border2);
+      border-radius: 4px;
+    }
+
+    .download-btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0a0a0f;
+    }
+
+    .btn-primary:hover {
+      background: #6ee7a0;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border2);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-reset {
+      width: 100%;
+      margin-top: 10px;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      font-size: 0.82rem;
+    }
+
+    .btn-reset:hover {
+      color: var(--text);
+      border-color: var(--border2);
+    }
+
+    /* Error */
+    #error-panel {
+      display: none;
+      background: rgba(248, 113, 113, 0.05);
+      border: 1px solid rgba(248, 113, 113, 0.2);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      color: var(--error);
+      font-size: 0.88rem;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Info cards al final */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 2rem;
+    }
+
+    .info-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .info-card .icon {
+      font-size: 20px;
+      margin-bottom: 6px;
+    }
+
+    .info-card h4 {
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .info-card p {
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-badge">100% local · sen nube · privado</div>
+      <h1>Subtítulos en<br><span>Galego</span> automáticos</h1>
+      <p class="subtitle">Sobe o teu vídeo e terás subtítulos precisos en galego<br>listos para Instagram, TikTok e
+        YouTube.</p>
+      <div style="margin-bottom: 1rem; display:flex; gap:10px; justify-content:center;">
+        <select id="fontSelect">
+          <option>Arial</option>
+          <option>Arial Rounded MT Bold</option>
+          <option>Georgia</option>
+          <option>Verdana</option>
+        </select>
+
+        <select id="sizeSelect">
+          <option value="14">Pequeno</option>
+          <option value="16" selected>Normal</option>
+          <option value="20">Grande</option>
+        </select>
+
+        <input type="color" id="colorPick" value="#ffffff">
+      </div>
+    </header>
+
+    <!-- Drop zone -->
+    <div class="dropzone" id="dropzone">
+      <input type="file" id="file-input" accept="video/*,.mp4,.mov,.avi,.mkv,.webm">
+      <div class="drop-icon">🎬</div>
+      <h3>Arrastra o vídeo aquí</h3>
+      <p>ou fai clic para seleccionalo</p>
+      <div class="formats">
+        <span class="format-tag">MP4</span>
+        <span class="format-tag">MOV</span>
+        <span class="format-tag">AVI</span>
+        <span class="format-tag">MKV</span>
+        <span class="format-tag">WEBM</span>
+        <span class="format-tag">até 500 MB</span>
+      </div>
+    </div>
+
+    <!-- Progreso -->
+    <div id="progress-panel">
+      <div class="file-info">
+        <div class="file-icon">🎞️</div>
+        <div>
+          <div class="file-name" id="prog-filename">video.mp4</div>
+          <div class="file-size" id="prog-size"></div>
+        </div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+      <div class="progress-status">
+        <span class="status-text" id="status-text">Procesando...</span>
+        <span class="status-pct" id="status-pct">0%</span>
+      </div>
+      <div class="steps">
+        <div class="step" id="step-1"></div>
+        <div class="step" id="step-2"></div>
+        <div class="step" id="step-3"></div>
+        <div class="step" id="step-4"></div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div id="error-panel">
+      <strong>⚠ Erro:</strong> <span id="error-text"></span>
+    </div>
+
+    <!-- Resultado -->
+    <div id="result-panel">
+      <div class="result-header">
+        <div class="result-check">✓</div>
+        <div>
+          <div class="result-title">Vídeo listo para subir!</div>
+          <div class="result-sub">Subtítulos en galego engadidos correctamente</div>
+        </div>
+      </div>
+      <div class="transcript-box" id="transcript-text">
+        Aquí aparecerá a transcrición...
+      </div>
+      <div class="download-btns">
+        <a class="btn btn-primary" id="btn-download-video" href="#" download>
+          ⬇ Descargar vídeo
+        </a>
+        <a class="btn btn-secondary" id="btn-download-srt" href="#" download>
+          📄 Descargar .SRT
+        </a>
+      </div>
+      <button class="btn btn-reset" onclick="resetApp()">
+        ↩ Procesar outro vídeo
+      </button>
+    </div>
+
+    <!-- Info -->
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="icon">🎙️</div>
+        <h4>Whisper de OpenAI</h4>
+        <p>Modelo de recoñecemento de voz corre no teu ordenador</p>
+      </div>
+      <div class="info-card">
+        <div class="icon">🔒</div>
+        <h4>Totalmente privado</h4>
+        <p>O vídeo non sae do teu ordenador en ningún momento</p>
+      </div>
+      <div class="info-card">
+        <div class="icon">📱</div>
+        <h4>Para redes sociais</h4>
+        <p>Formato MP4 optimizado con subtítulos queimados</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    let currentJobId = null;
+    let pollInterval = null;
+
+    // Drag & drop
+    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropzone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) uploadFile(file);
+    });
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) uploadFile(fileInput.files[0]);
+    });
+
+    function formatBytes(bytes) {
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+    }
+
+    async function uploadFile(file) {
+      document.getElementById('progress-panel').style.display = 'block';
+      document.getElementById('result-panel').style.display = 'none';
+      document.getElementById('error-panel').style.display = 'none';
+      dropzone.style.display = 'none';
+
+      document.getElementById('prog-filename').textContent = file.name;
+      document.getElementById('prog-size').textContent = formatBytes(file.size);
+      setProgress(5, 'Subindo ficheiro...');
+
+      const formData = new FormData();
+      formData.append('video', file);
+
+      try {
+        const res = await fetch('/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        currentJobId = data.job_id;
+        pollInterval = setInterval(pollStatus, 1500);
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    async function pollStatus() {
+      if (!currentJobId) return;
+      try {
+        const res = await fetch(`/status/${currentJobId}`);
+        const data = await res.json();
+
+        setProgress(data.progress, data.message);
+
+        if (data.status === 'done') {
+          clearInterval(pollInterval);
+          showResult(data);
+        } else if (data.status === 'error') {
+          clearInterval(pollInterval);
+          showError(data.message);
+        }
+      } catch (err) {
+        clearInterval(pollInterval);
+        showError('Erro de conexión co servidor.');
+      }
+    }
+
+    function setProgress(pct, message) {
+      document.getElementById('progress-bar').style.width = pct + '%';
+      document.getElementById('status-text').textContent = message || '';
+      document.getElementById('status-pct').textContent = pct + '%';
+
+      // Steps
+      const stepMap = { 10: 1, 30: 1, 65: 2, 80: 3, 100: 4 };
+      const activeStep = pct <= 30 ? 1 : pct <= 65 ? 2 : pct <= 80 ? 3 : 4;
+      for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById(`step-${i}`);
+        if (i < activeStep) el.className = 'step done';
+        else if (i === activeStep) el.className = 'step active';
+        else el.className = 'step';
+      }
+    }
+
+    function showResult(data) {
+      document.getElementById('progress-panel').style.display = 'none';
+      document.getElementById('result-panel').style.display = 'block';
+      document.getElementById('transcript-text').textContent = data.transcript || 'Sen transcrición';
+      document.getElementById('btn-download-video').href = `/download/${currentJobId}`;
+      document.getElementById('btn-download-srt').href = `/download_srt/${currentJobId}`;
+    }
+
+    function showError(msg) {
+      document.getElementById('progress-panel').style.display = 'none';
+      document.getElementById('error-panel').style.display = 'block';
+      document.getElementById('error-text').textContent = msg;
+      dropzone.style.display = 'block';
+    }
+
+    function resetApp() {
+      currentJobId = null;
+      if (pollInterval) clearInterval(pollInterval);
+      document.getElementById('result-panel').style.display = 'none';
+      document.getElementById('error-panel').style.display = 'none';
+      document.getElementById('progress-panel').style.display = 'none';
+      dropzone.style.display = 'block';
+      fileInput.value = '';
+    }
+  </script>
 </body>
+
 </html>
