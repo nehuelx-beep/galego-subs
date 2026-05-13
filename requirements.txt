@@ -1,3 +1,4 @@
 flask
-openai-whisper
-torch
+openai-whisper==20250625
+torch==2.7.1
+torchaudio==2.7.1
