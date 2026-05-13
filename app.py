@@ -1,10 +1,10 @@
 import os
 import sys
 import uuid
-import json
 import subprocess
 import threading
 import traceback
+import time
 from pathlib import Path
 from flask import Flask, request, jsonify, render_template, send_file
 import whisper
@@ -23,18 +23,34 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 # Estado de los trabajos en memoria
 jobs = {}
 
-# Carga el modelo Whisper
+# Estado do modelo — cargado en background despois de que Flask arrinque
+model = None
+model_ready = False
+model_error = None
 
-print("Cargando modelo Whisper... (pode tardar un momento a primeira vez)", flush=True)
-try:
-    model = whisper.load_model("medium")
-    print(f"Modelo listo. Tipo: {type(model).__name__}, Device: {next(model.parameters()).device}", flush=True)
-except Exception as e:
-    print(f"ERRO FATAL ao cargar o modelo Whisper: {e}", flush=True)
-    traceback.print_exc(file=sys.stdout)
-    sys.stdout.flush()
-    sys.exit(1)
 
+def load_model_background():
+    """Load the Whisper model in a background thread after Flask has started."""
+    global model, model_ready, model_error
+    print(
+        f"[{time.strftime('%H:%M:%S')}] Background thread: comezando carga do modelo Whisper...",
+        flush=True,
+    )
+    try:
+        t0 = time.time()
+        model = whisper.load_model("medium")
+        elapsed = time.time() - t0
+        print(
+            f"[{time.strftime('%H:%M:%S')}] Modelo listo en {elapsed:.1f}s. "
+            f"Tipo: {type(model).__name__}, Device: {next(model.parameters()).device}",
+            flush=True,
+        )
+        model_ready = True
+    except Exception as e:
+        model_error = str(e)
+        print(f"[{time.strftime('%H:%M:%S')}] ERRO ao cargar o modelo Whisper: {e}", flush=True)
+        traceback.print_exc(file=sys.stdout)
+        sys.stdout.flush()
 
 
 def update_job(job_id, **kwargs):
@@ -174,6 +190,13 @@ def format_timestamp(seconds: float) -> str:
     return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
 
+@app.route("/health")
+def health():
+    """Immediate health check — always returns 200 so Railway knows the container is alive."""
+    status = "ready" if model_ready else ("error" if model_error else "loading")
+    return jsonify({"status": status, "model_ready": model_ready}), 200
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -181,6 +204,10 @@ def index():
 
 @app.route("/upload", methods=["POST"])
 def upload():
+    if not model_ready:
+        msg = f"Modelo aínda non está listo: {model_error}" if model_error else "Modelo cargando, agarda un momento..."
+        return jsonify({"error": msg}), 503
+
     if "video" not in request.files:
         return jsonify({"error": "Non se recibiu ningún ficheiro"}), 400
 
@@ -248,8 +275,12 @@ def download_srt(job_id):
 
 
 if __name__ == "__main__":
-    print("\n✓ Abre o navegador en: http://localhost:5000\n", flush=True)
-    app.run(
-        host="0.0.0.0",
-        port=int(os.environ.get("PORT", 5000))
-    )
+    port = int(os.environ.get("PORT", 5000))
+    print(f"[{time.strftime('%H:%M:%S')}] Flask arrincando na porta {port}...", flush=True)
+
+    # Start model loading in background AFTER Flask is about to serve requests
+    model_thread = threading.Thread(target=load_model_background, daemon=True)
+    model_thread.start()
+
+    print(f"[{time.strftime('%H:%M:%S')}] Flask listo. Modelo cargando en background.", flush=True)
+    app.run(host="0.0.0.0", port=port)
