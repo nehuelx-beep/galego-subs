@@ -20,8 +20,8 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 # Estado de los trabajos en memoria
 jobs = {}
 
-# Carga el modelo Whisper (cambia a "medium" o "large" para más precisión)
-print("Cargando modelo Whisper... (puede tardar un momento la primera vez)")
+# Carga el modelo Whisper
+print("Cargando modelo Whisper... (pode tardar un momento a primeira vez)")
 model = whisper.load_model("medium")
 print("Modelo listo.")
 
@@ -30,7 +30,16 @@ def update_job(job_id, **kwargs):
     jobs[job_id].update(kwargs)
 
 
-def process_video(job_id, video_path: Path):
+def hex_to_ass_color(hex_color: str) -> str:
+    """Convierte #RRGGBB a formato ASS &HBBGGRR (sin alfa)."""
+    hex_color = hex_color.lstrip('#')
+    r = int(hex_color[0:2], 16)
+    g = int(hex_color[2:4], 16)
+    b = int(hex_color[4:6], 16)
+    return f"&H{b:02X}{g:02X}{r:02X}"
+
+
+def process_video(job_id, video_path: Path, font_name: str, font_size: int, font_color: str):
     try:
         update_job(job_id, status="extracting", progress=10, message="Extraendo audio do vídeo...")
 
@@ -66,23 +75,33 @@ def process_video(job_id, video_path: Path):
         with open(srt_path, "w", encoding="utf-8") as f:
             f.write(srt_content)
 
-        # Guardar también el texto para mostrarlo en la UI
+        # Guardar texto y timestamps de palabras para animación frontend
         full_text = transcription["text"].strip()
-        update_job(job_id, transcript=full_text, srt=srt_content)
+        word_timestamps = extract_word_timestamps(transcription["segments"])
+        update_job(job_id, transcript=full_text, srt=srt_content, words=word_timestamps)
 
         update_job(job_id, status="burning", progress=80, message="Engadindo subtítulos ao vídeo...")
 
-             # 4. Quemar subtítulos con FFmpeg
+        # 4. Quemar subtítulos con FFmpeg — estilo limpio y configurable
         output_path = OUTPUT_DIR / f"{job_id}_subtitulado.mp4"
 
-        # Estilo pensado para redes sociales: texto grande, fondo semitransparente
+        ass_primary = hex_to_ass_color(font_color)
+        # Outline negro suave, fondo casi transparente
         srt_fixed = str(srt_path).replace("\\", "/").replace(":", "\\:")
 
         subtitles_filter = (
             f"subtitles='{srt_fixed}':"
-            "force_style='FontName=Arial,FontSize=22,PrimaryColour=&HFFFFFF,"
-            "OutlineColour=&H40000000,BorderStyle=4,BackColour=&H80000000,"
-            "Outline=0,Shadow=0,Alignment=2,MarginV=40'"
+            f"force_style='FontName={font_name},"
+            f"FontSize={font_size},"
+            f"PrimaryColour={ass_primary},"
+            f"OutlineColour=&H00000000,"   # outline negro puro
+            f"BackColour=&H60000000,"      # fondo semitransparente suave
+            f"BorderStyle=4,"              # caja de fondo
+            f"Outline=2,"
+            f"Shadow=0,"
+            f"Bold=1,"
+            f"Alignment=2,"               # centrado abajo
+            f"MarginV=35'"
         )
 
         result = subprocess.run([
@@ -92,6 +111,7 @@ def process_video(job_id, video_path: Path):
             "-c:a", "aac", "-b:a", "192k",
             str(output_path), "-y"
         ], capture_output=True, text=True)
+
         if result.returncode != 0:
             raise Exception(f"FFmpeg burn error: {result.stderr}")
 
@@ -107,6 +127,20 @@ def process_video(job_id, video_path: Path):
 
     except Exception as e:
         update_job(job_id, status="error", progress=0, message=f"Erro: {str(e)}")
+
+
+def extract_word_timestamps(segments):
+    """Extrae timestamps de cada palabra para la animación del frontend."""
+    words = []
+    for seg in segments:
+        if "words" in seg:
+            for w in seg["words"]:
+                words.append({
+                    "word": w.get("word", "").strip(),
+                    "start": round(w.get("start", 0), 3),
+                    "end": round(w.get("end", 0), 3),
+                })
+    return words
 
 
 def generate_srt(segments):
@@ -143,6 +177,14 @@ def upload():
     if not file.filename:
         return jsonify({"error": "Nome de ficheiro baleiro"}), 400
 
+    # Parámetros de estilo opcionales
+    font_name = request.form.get("font", "Arial")
+    font_size = int(request.form.get("size", 18))
+    font_color = request.form.get("color", "#ffffff")
+
+    # Validar tamaño razonable
+    font_size = max(10, min(font_size, 40))
+
     job_id = str(uuid.uuid4())[:8]
     ext = Path(file.filename).suffix.lower()
     video_path = UPLOAD_DIR / f"{job_id}{ext}"
@@ -155,10 +197,14 @@ def upload():
         "filename": file.filename,
         "transcript": "",
         "srt": "",
+        "words": [],
         "output_file": ""
     }
 
-    thread = threading.Thread(target=process_video, args=(job_id, video_path))
+    thread = threading.Thread(
+        target=process_video,
+        args=(job_id, video_path, font_name, font_size, font_color)
+    )
     thread.daemon = True
     thread.start()
 
@@ -191,9 +237,7 @@ def download_srt(job_id):
 
 
 if __name__ == "__main__":
-    import os
     print("\n✓ Abre o navegador en: http://localhost:5000\n")
-
     app.run(
         host="0.0.0.0",
         port=int(os.environ.get("PORT", 5000))
