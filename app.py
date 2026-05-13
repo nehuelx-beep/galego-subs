@@ -1,11 +1,14 @@
 import os
+import sys
 import uuid
 import json
 import subprocess
 import threading
+import traceback
 from pathlib import Path
 from flask import Flask, request, jsonify, render_template, send_file
 import whisper
+
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500 MB
@@ -21,9 +24,17 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 jobs = {}
 
 # Carga el modelo Whisper
-print("Cargando modelo Whisper... (pode tardar un momento a primeira vez)")
-model = whisper.load_model("medium")
-print("Modelo listo.")
+
+print("Cargando modelo Whisper... (pode tardar un momento a primeira vez)", flush=True)
+try:
+    model = whisper.load_model("medium")
+    print(f"Modelo listo. Tipo: {type(model).__name__}, Device: {next(model.parameters()).device}", flush=True)
+except Exception as e:
+    print(f"ERRO FATAL ao cargar o modelo Whisper: {e}", flush=True)
+    traceback.print_exc(file=sys.stdout)
+    sys.stdout.flush()
+    sys.exit(1)
+
 
 
 def update_job(job_id, **kwargs):
@@ -237,7 +248,7 @@ def download_srt(job_id):
 
 
 if __name__ == "__main__":
-    print("\n✓ Abre o navegador en: http://localhost:5000\n")
+    print("\n✓ Abre o navegador en: http://localhost:5000\n", flush=True)
     app.run(
         host="0.0.0.0",
         port=int(os.environ.get("PORT", 5000))
